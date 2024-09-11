@@ -178,5 +178,119 @@ docker compose up
 </table>
 
 
+Aqui está o conteúdo formatado como um README:
 
+---
+
+# Configuração de Instância EC2 com Conexão por IP Público
+
+Esses são comandos para criar uma instância EC2 com conexão por IP público. Para usar SSH, é necessário AMI e Compass bloqueia por padrão. Antes de criar a instância, é necessário fazer uma pré-configuração.
+
+## 1. Criação da VPC
+1. No AWS Management Console, vá para o VPC Dashboard.
+2. Clique em **Create VPC**.
+3. Defina um nome para a VPC e selecione um bloco CIDR. Exemplo: `10.0.0.0/16`.
+4. Deixe as outras opções como padrão e clique em **Create VPC**.
+
+## 2. Criar uma Subnet Pública
+1. Ainda no VPC Dashboard, vá para **Subnets**.
+2. Clique em **Create Subnet**.
+3. Escolha a VPC que você acabou de criar.
+4. Defina um nome para a subnet (ex: `Public-Subnet`) e selecione uma zona de disponibilidade (de preferência na Virgínia).
+5. Escolha um bloco CIDR para a subnet, como `10.0.1.0/24`.
+6. Clique em **Create Subnet**.
+
+## 3. Criar um Internet Gateway (IGW)
+1. No VPC Dashboard, vá para **Internet Gateways**.
+2. Clique em **Create Internet Gateway**.
+3. Nomeie o IGW e clique em **Create**.
+4. Selecione o IGW que você acabou de criar e clique em **Actions > Attach to VPC**.
+5. Selecione a VPC que você criou no primeiro passo e clique em **Attach**.
+
+## 4. Configurar a Tabela de Rotas
+1. No VPC Dashboard, vá para **Route Tables**.
+2. Encontre a tabela de rotas associada à sua subnet pública.
+3. Selecione a tabela de rotas e clique em **Edit routes**.
+4. Adicione uma nova rota:
+   - **Destination**: `0.0.0.0/0`
+   - **Target**: O IGW que você criou.
+5. Salve as mudanças.
+
+**Obs**: Ao clicar em Internet Gateway, vai para `igw-xxxx..`, adicione a sua neste campo.
+
+## 5. Configurar Security Groups
+1. No EC2 Dashboard, vá para **Security Groups**.
+2. Crie um novo Security Group, nomeie-o e selecione a VPC que você criou.
+3. Adicione regras de entrada para permitir:
+   - EC2 Instance Connect (porta 22) de Anywhere (`0.0.0.0/0`).
+   - HTTP (porta 80) para acesso web.
+   - HTTPS (porta 443), se necessário.
+   - Qualquer outra porta utilizada pela aplicação Node.js (ex: 3000).
+4. Salve o Security Group.
+
+**Obs**: Deve ser a porta utilizada pela sua API.
+
+## 6. Criar a Instância EC2
+1. No EC2 Dashboard, clique em **Launch Instance**.
+2. Adicione as tags mostradas no documento enviado no Teams.
+3. Escolha uma Amazon Machine Image (AMI), como Amazon Linux 2.
+4. Escolha o tipo da instância (ex: `t2.micro` para uso gratuito).
+5. Configure a instância para usar a VPC que você criou e selecione a subnet pública.
+6. Verifique se a opção **Auto-assign Public IP** está habilitada para permitir o IP público.
+7. Associe o Security Group que você criou.
+8. Não será necessário criar ou selecionar um par de chaves (skip the key pair creation), já que você vai usar EC2 Instance Connect.
+9. Lançar a instância clicando em **Launch Instance**.
+
+## 7. Conectar-se à Instância via EC2 Instance Connect
+1. Após a instância ser iniciada, vá para o EC2 Dashboard e selecione a instância criada.
+2. Clique no botão **Connect**.
+3. Na aba EC2 Instance Connect, verifique o usuário (para Amazon Linux será `ec2-user`).
+4. Clique em **Connect**. Agora você estará conectado à sua instância diretamente pelo navegador.
+
+## Configurar o Ambiente no Terminal
+
+### 1. Instalar Node.js e NPM usando nvm
+```sh
+sudo su -
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+. ~/.nvm/nvm.sh
+nvm install node
+node -v
+npm -v
+```
+
+### 2. Instalar Git e Docker
+```sh
+sudo yum update -y
+sudo yum install git -y
+sudo yum install docker
+sudo usermod -aG docker ec2-user
+sudo service docker start
+docker info # para confirmar se foi instalado corretamente
+git --version
+docker --version
+```
+
+### 3. Clonando seu Projeto
+```sh
+git clone (url do seu projeto)
+cd seu-projeto
+npm install
+npm run dev
+```
+
+Lembrando que sua API deve estar rodando localmente no `0.0.0.0` e para acessar sua API fora da AWS é necessário acessar utilizando o IP público que está no EC2 dashboard > clique na sua instância > public ip.
+
+Ex: `http://123.23.21.232:3000/`
+
+Para rodar o projeto pelo Docker é necessário fazer a configuração de login antes.
+
+### Links Úteis
+- [Vídeo 1](https://www.youtube.com/watch?v=VHzeoDK6L0c)
+- [Vídeo 2](https://www.youtube.com/watch?v=i5oU38ejlfI&t=106s)
+- [Vídeo 3](https://www.youtube.com/watch?v=9TQOWmOniPs)
+
+---
+
+Se precisar de mais alguma coisa, estou aqui para ajudar!
 
